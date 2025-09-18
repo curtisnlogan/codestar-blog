@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from .models import About
+from .forms import CollaborateForm
 
 # Create your views here.
 
@@ -22,9 +23,10 @@ def about(request):
     """
 
     about = get_object_or_404(About)
+    collaborate = CollaborateForm()
 
     return render(
         request,
         "about/about.html",
-        {"about": about},
+        {"about": about, "collaborate_form": collaborate},
     )
