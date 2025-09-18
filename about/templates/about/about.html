@@ -1,16 +1,15 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
 {% block content %}
-    {% load static %}
     <div class="container mt-5">
         <div class="row">
-            <div class="col-4 text-center">
+            <div class="col-12 col-md-4 text-center">
                 <img src="{% static 'images/nobody.jpg' %}" width="75%">
             </div>
-            <div class="col-8">
-                <!-- Title goes between these h2 tags -->
+            <div class="col-12 col-md-8">
                 <h2>{{ about.title }}</h2>
-                <!-- Content goes directly underneath this -->
-                <p>{{ about.content | safe }}</p>
+                {{ about.content | safe }}
             </div>
         </div>
         <div class="row">
@@ -19,6 +18,30 @@
                 <p class="text-end">
                     <em>Updated on: {{ about.updated_on }}</em>
                 </p>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-6 my-5">
+                <h2>Let's collaborate!</h2>
+                <p>
+                    I believe in the power of shared knowledge and collective effort.
+                    Whether you have a project in mind, wish to co-author
+                    an article, or simply want to brainstorm some ideas,
+                    I'm excited to hear from you. Fill out the form
+                    and we can get the ball rolling!
+                </p>
+                <!-- add your form here. Your submit button should
+have the classes of btn, btn-secondary -->
+                {% if user.is_authenticated %}
+                    <p>Posting as: {{ user.username }}</p>
+                    <form id="collaborateForm" method="post">
+                        {{ collaborate_form | crispy }}
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary">Submit</button>
+                    </form>
+                {% else %}
+                    <p>Please login to send a collaborate request!</p>
+                {% endif %}
             </div>
         </div>
     </div>
