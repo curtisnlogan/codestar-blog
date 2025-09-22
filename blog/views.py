@@ -1,15 +1,19 @@
 from django.shortcuts import render, get_object_or_404, reverse
 from django.views import generic
-from .models import Post, Comment
-from .forms import CommentForm
 from django.contrib import messages
 from django.http import HttpResponseRedirect
+from .models import Post, Comment
+from .forms import CommentForm
 
 
 # Create your views here.
 
 
 class PostList(generic.ListView):
+    """
+    Uses Django generic view list to display posts on index page paginated by 6.
+    """
+
     queryset = Post.objects.filter(status=1)
     template_name = "blog/index.html"
     paginate_by = 6
@@ -17,16 +21,25 @@ class PostList(generic.ListView):
 
 def post_detail(request, slug):
     """
-    Display an individual :model:`blog.Post`.
+    Display an individual :model:`blog.Post` with comments and comment submission form.
 
-    **Context**
+    Retrieves a published post by slug and displays it along with all associated
+    comments. Handles comment submission via POST request, saving new comments
+    with approval required status.
 
-    ``post``
-        An instance of :model:`blog.Post`.
+    **Context Variables:**
+        ``post``
+            An instance of :model:`blog.Post` - the blog post to display.
+        ``comments``
+            QuerySet of :model:`blog.Comment` - all comments for this post,
+            ordered by creation date (newest first).
+        ``comment_count``
+            Integer count of approved comments for this post.
+        ``comment_form``
+            Instance of :form:`blog.CommentForm` - form for submitting new comments.
 
     **Template:**
-
-    :template:`blog/post_detail.html`
+        :template:`blog/post_detail.html`
     """
 
     queryset = Post.objects.filter(status=1)
@@ -35,7 +48,6 @@ def post_detail(request, slug):
     comment_count = post.comments.filter(approved=True).count()
 
     if request.method == "POST":
-        print("Received a POST request")
         comment_form = CommentForm(data=request.POST)
         if comment_form.is_valid():
             comment = comment_form.save(commit=False)
@@ -46,8 +58,6 @@ def post_detail(request, slug):
                 request, messages.SUCCESS, "Comment submitted and awaiting approval"
             )
     comment_form = CommentForm()
-
-    print("About to render template")
 
     return render(
         request,
@@ -63,7 +73,14 @@ def post_detail(request, slug):
 
 def comment_edit(request, slug, comment_id):
     """
-    view to edit comments
+    Handle editing of an existing comment.
+
+    Allows authenticated users to edit their own :model:`blog.Comment`. The edited comment
+    is automatically set to unapproved status and requires re-approval by
+    an administrator. Only processes POST requests.
+
+    **Returns:**
+        HttpResponseRedirect: Redirects to the post detail page after processing.
     """
     if request.method == "POST":
 
@@ -86,7 +103,14 @@ def comment_edit(request, slug, comment_id):
 
 def comment_delete(request, slug, comment_id):
     """
-    view to delete comment
+    Handle deletion of an existing comment.
+
+    Allows authenticated users to delete their own :model:`blog.Comment`. The comment
+    is permanently removed from the database. Users can only delete comments
+    they authored.
+
+    **Returns:**
+        HttpResponseRedirect: Redirects to the post detail page after processing.
     """
     comment = get_object_or_404(Comment, pk=comment_id)
 
@@ -94,8 +118,6 @@ def comment_delete(request, slug, comment_id):
         comment.delete()
         messages.add_message(request, messages.SUCCESS, "Comment deleted!")
     else:
-        messages.add_message(
-            request, messages.ERROR, "You can only delete your own comments!"
-        )
+        messages.add_message(request, messages.ERROR, "You can only delete your own comments!")
 
     return HttpResponseRedirect(reverse("post_detail", args=[slug]))
